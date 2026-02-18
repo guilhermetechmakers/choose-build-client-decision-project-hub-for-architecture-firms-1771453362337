@@ -3,6 +3,7 @@ import { AuthLayout } from '@/layouts/auth-layout'
 import { DashboardLayout } from '@/layouts/dashboard-layout'
 import { Login } from '@/pages/auth/login'
 import { Signup } from '@/pages/auth/signup'
+import LoginSignupPage from '@/pages/Login/Signup'
 import { ForgotPassword } from '@/pages/auth/forgot-password'
 import { ResetPassword } from '@/pages/auth/reset-password'
 import { VerifyEmail } from '@/pages/auth/verify-email'
@@ -39,6 +40,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/login', element: <Login /> },
       { path: '/signup', element: <Signup /> },
+      { path: '/login-signup', element: <LoginSignupPage /> },
+      { path: '/login-/-signup', element: <LoginSignupPage /> },
       { path: '/forgot-password', element: <ForgotPassword /> },
       { path: '/reset-password', element: <ResetPassword /> },
       { path: '/verify-email', element: <VerifyEmail /> },
@@ -53,6 +56,7 @@ export const router = createBrowserRouter([
       { path: 'projects/new', element: <NewProject /> },
       { path: 'projects/:projectId', element: <ProjectBoard /> },
       { path: 'projects/:projectId/decisions', element: <DecisionLog /> },
+      { path: 'projects/:projectId/decisions/:decisionId', element: <DecisionLog /> },
       { path: 'projects/:projectId/decisions/new', element: <CreateDecision /> },
       { path: 'projects/:projectId/messages', element: <Messages /> },
       { path: 'projects/:projectId/files', element: <FilesDrawings /> },

@@ -23,14 +23,22 @@ export async function apiRequest<T>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+  const url = `${API_BASE}${endpoint}`
+  const res = await fetch(url, {
     ...options,
     headers,
   })
 
   if (!res.ok) {
+    const isAuthEndpoint = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/signup')
+    if (res.status === 401 && !isAuthEndpoint) {
+      localStorage.removeItem('access_token')
+      window.location.href = '/login'
+    }
+    const body = await res.json().catch(() => ({}))
     const err: ApiError = {
-      message: (await res.json().catch(() => ({})))?.message ?? res.statusText,
+      message: (body as { message?: string })?.message ?? res.statusText,
+      code: (body as { code?: string })?.code,
       status: res.status,
     }
     throw err

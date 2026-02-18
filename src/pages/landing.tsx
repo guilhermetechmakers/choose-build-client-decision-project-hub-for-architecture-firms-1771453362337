@@ -18,6 +18,9 @@ export function Landing() {
             <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
               Sign in
             </Link>
+            <Link to="/login-signup" className="text-sm text-muted-foreground hover:text-foreground">
+              Sign in or sign up
+            </Link>
             <Button variant="accent" asChild>
               <Link to="/signup">Get started</Link>
             </Button>

@@ -48,3 +48,47 @@ export interface AuditEntry {
   timestamp: string
   metadata?: Record<string, unknown>
 }
+
+/** decision_log table (DB); list view and CRUD */
+export interface DecisionLogRecord {
+  id: string
+  user_id: string
+  title: string
+  description?: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+/** Published snapshot; immutable */
+export interface DecisionVersion {
+  id: string
+  decisionId: string
+  version: number
+  publishedAt: string
+  options: DecisionOption[]
+  costDeltas: Record<string, number>
+  recommendedOptionId?: string
+  downloadUrl?: string
+}
+
+/** Approval action: Approve | Request Change | Ask Question | E-sign */
+export interface ApprovalRecord {
+  id: string
+  decisionId: string
+  versionId: string
+  userId: string
+  userName: string
+  action: 'approved' | 'request_change' | 'ask_question' | 'e_signed'
+  comment?: string
+  signedAt?: string
+  createdAt: string
+}
+
+/** Related item link (drawing, task, meeting) */
+export interface RelatedItem {
+  id: string
+  type: 'drawing' | 'task' | 'meeting_note'
+  title: string
+  href: string
+}

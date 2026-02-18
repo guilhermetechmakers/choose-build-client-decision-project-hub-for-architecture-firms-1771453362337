@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SSOButtons } from '@/components/login-signup/SSOButtons'
+import { useSignUp } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
@@ -17,12 +20,41 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function Signup() {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const inviteToken = searchParams.get('invite') ?? searchParams.get('token') ?? ''
+  const signUp = useSignUp()
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      name: searchParams.get('name') ?? '',
+      email: searchParams.get('email') ?? '',
+    },
   })
 
-  const onSubmit = (_data: FormValues) => {
-    // Auth integration placeholder
+  useEffect(() => {
+    const name = searchParams.get('name')
+    const email = searchParams.get('email') ?? searchParams.get('company')
+    if (name) setValue('name', name)
+    if (email) setValue('email', email)
+  }, [searchParams, setValue])
+
+  const onSubmit = (data: FormValues) => {
+    signUp.mutate(
+      {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        invite_token: inviteToken || undefined,
+      },
+      {
+        onSuccess: (res) => {
+          if (res?.session?.user?.id) {
+            navigate('/dashboard', { replace: true })
+          }
+        },
+      }
+    )
   }
 
   return (
@@ -73,7 +105,13 @@ export function Signup() {
               <p className="text-sm text-destructive">{errors.password.message}</p>
             )}
           </div>
-          <Button type="submit" variant="accent" className="w-full">
+          <Button
+            type="submit"
+            variant="accent"
+            className="w-full"
+            isLoading={signUp.isPending}
+            disabled={signUp.isPending}
+          >
             Sign up
           </Button>
         </form>
@@ -83,18 +121,15 @@ export function Signup() {
           </div>
           <span className="relative bg-card px-2 text-xs text-muted-foreground">Or continue with</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" disabled>
-            Google
-          </Button>
-          <Button type="button" variant="outline" disabled>
-            Microsoft
-          </Button>
-        </div>
+        <SSOButtons isLoading={signUp.isPending} />
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link to="/login" className="text-primary font-medium hover:underline">
             Sign in
+          </Link>
+          {' · '}
+          <Link to="/login-signup" className="text-primary font-medium hover:underline">
+            Login & signup
           </Link>
         </p>
       </CardContent>

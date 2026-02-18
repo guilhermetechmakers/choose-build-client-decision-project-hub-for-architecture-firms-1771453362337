@@ -1,79 +1,216 @@
-import { useParams, Link } from 'react-router-dom'
-import { FileCheck, Plus, Search, DollarSign } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { Plus, ArrowLeft, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { DecisionList, type DecisionListFilters, type SortField, type SortOrder } from '@/components/decision-log/DecisionList'
+import { DecisionDetailPanel } from '@/components/decision-log/DecisionDetailPanel'
+import {
+  listDecisions,
+  getDecisionDetail,
+  submitApproval,
+  type ListDecisionsParams,
+} from '@/api/decision-log'
+import type { Decision } from '@/types'
+import { useState } from 'react'
 
-const mockDecisions = [
-  { id: '1', title: 'Exterior cladding option', status: 'pending', costDelta: 12000, updatedAt: '2 hours ago' },
-  { id: '2', title: 'Kitchen fixture package', status: 'approved', costDelta: 0, updatedAt: '1 day ago' },
-  { id: '3', title: 'Roof membrane system', status: 'changes_requested', costDelta: 3500, updatedAt: '3 days ago' },
+/** Mock data when API is not available */
+const MOCK_DECISIONS: Decision[] = [
+  {
+    id: '1',
+    projectId: '',
+    title: 'Exterior cladding option',
+    description: 'Choose between timber, composite, or metal cladding.',
+    status: 'pending',
+    costDelta: 12000,
+    recommendedOptionId: 'opt-1',
+    options: [
+      { id: 'opt-1', label: 'Timber', description: 'Natural finish', costDelta: 0, isRecommended: true },
+      { id: 'opt-2', label: 'Composite', description: 'Low maintenance', costDelta: 8000 },
+      { id: 'opt-3', label: 'Metal', description: 'Modern look', costDelta: 12000 },
+    ],
+    publishedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+    thumbnailUrl: undefined,
+  },
+  {
+    id: '2',
+    projectId: '',
+    title: 'Kitchen fixture package',
+    description: 'Standard vs premium fixtures.',
+    status: 'approved',
+    costDelta: 0,
+    options: [
+      { id: 'opt-a', label: 'Standard', costDelta: 0, isRecommended: true },
+      { id: 'opt-b', label: 'Premium', costDelta: 4500 },
+    ],
+    publishedAt: new Date(Date.now() - 86400000).toISOString(),
+    approvedAt: new Date(Date.now() - 86400000).toISOString(),
+    thumbnailUrl: undefined,
+  },
+  {
+    id: '3',
+    projectId: '',
+    title: 'Roof membrane system',
+    description: 'Single-ply vs built-up roofing.',
+    status: 'changes_requested',
+    costDelta: 3500,
+    options: [
+      { id: 'opt-x', label: 'Single-ply', costDelta: 0 },
+      { id: 'opt-y', label: 'Built-up', costDelta: 3500, isRecommended: true },
+    ],
+    publishedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+    thumbnailUrl: undefined,
+  },
 ]
 
-const statusVariant = {
-  draft: 'secondary' as const,
-  pending: 'warning' as const,
-  approved: 'success' as const,
-  changes_requested: 'destructive' as const,
-}
-
 export function DecisionLog() {
-  const { projectId } = useParams<{ projectId: string }>()
+  const { projectId, decisionId } = useParams<{ projectId: string; decisionId?: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [view, setView] = useState<'cards' | 'table'>('cards')
+  const [filters, setFilters] = useState<DecisionListFilters>({})
+  const [sortBy, setSortBy] = useState<SortField>('date')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+
+  const listParams: ListDecisionsParams = {
+    projectId: projectId ?? '',
+    ...filters,
+    sortBy,
+    sortOrder,
+    page: 1,
+    pageSize: 50,
+  }
+
+  const listQuery = useQuery({
+    queryKey: ['decisions', projectId, listParams],
+    queryFn: () => listDecisions(listParams),
+    enabled: Boolean(projectId),
+  })
+
+  const detailQuery = useQuery({
+    queryKey: ['decision-detail', projectId, decisionId],
+    queryFn: () => getDecisionDetail(projectId!, decisionId!),
+    enabled: Boolean(projectId && decisionId),
+  })
+
+  const approvalMutation = useMutation({
+    mutationFn: ({
+      action,
+      comment,
+      versionId,
+    }: { action: 'approve' | 'request_change' | 'ask_question'; comment?: string; versionId: string }) =>
+      submitApproval(projectId!, decisionId!, { action, comment, versionId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['decision-detail', projectId, decisionId] })
+      queryClient.invalidateQueries({ queryKey: ['decisions', projectId] })
+      toast.success('Approval submitted.')
+    },
+    onError: (err: { message?: string }) => {
+      toast.error(err?.message ?? 'Failed to submit approval.')
+    },
+  })
+
+  const decisions = listQuery.data?.items ?? (listQuery.isError ? MOCK_DECISIONS.map((d) => ({ ...d, projectId: projectId ?? '' })) : [])
+  const total = listQuery.data?.total ?? decisions.length
+  const isLoadingList = listQuery.isLoading
+  const detail = detailQuery.data
+  const isLoadingDetail = decisionId != null && detailQuery.isLoading
+
+  const handleApproval = async (
+    action: 'approve' | 'request_change' | 'ask_question',
+    comment?: string
+  ) => {
+    const versionId = detail?.versions?.[0]?.id ?? detail?.decision?.id ?? ''
+    await approvalMutation.mutateAsync({ action, comment, versionId })
+  }
+
+  if (!projectId) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <h1 className="text-2xl font-bold">Decision Log</h1>
+        <p className="text-muted-foreground">Select a project to view its decision log.</p>
+        <Button asChild>
+          <Link to="/dashboard/projects">Go to projects</Link>
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Decision Log</h1>
-          <p className="text-muted-foreground">Review and manage decision cards. All versions are auditable.</p>
+        <div className="flex items-center gap-2">
+          {decisionId ? (
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/dashboard/projects/${projectId}/decisions`)} aria-label="Back to list">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          ) : null}
+          <div>
+            <h1 className="text-2xl font-bold">Decision Log</h1>
+            <p className="text-muted-foreground">
+              Review and manage decision cards. All versions are auditable.
+            </p>
+          </div>
         </div>
-        <Button variant="accent" asChild>
-          <Link to={`/dashboard/projects/${projectId}/decisions/new`} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Create decision
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {!decisionId && (
+            <>
+              <Button
+                variant={view === 'cards' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setView('cards')}
+                aria-label="Card view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={view === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setView('table')}
+                aria-label="Table view"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button variant="accent" asChild>
+                <Link to={`/dashboard/projects/${projectId}/decisions/new`} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create decision
+                </Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Decisions</CardTitle>
-          <CardContent className="pt-0">
-            <div className="relative mb-4 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search decisions..." className="pl-9" />
-            </div>
-            <div className="space-y-2">
-              {mockDecisions.map((d) => (
-                <Link
-                  key={d.id}
-                  to="#"
-                  className={cn(
-                    'flex items-center gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50'
-                  )}
-                >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <FileCheck className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">{d.title}</p>
-                    <p className="text-sm text-muted-foreground">Updated {d.updatedAt}</p>
-                  </div>
-                  {d.costDelta !== undefined && d.costDelta > 0 && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <DollarSign className="h-4 w-4" />
-                      +{d.costDelta.toLocaleString()}
-                    </div>
-                  )}
-                  <Badge variant={statusVariant[d.status as keyof typeof statusVariant]}>{d.status.replace('_', ' ')}</Badge>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </CardHeader>
-      </Card>
+      {decisionId ? (
+        <DecisionDetailPanel
+          decision={detail?.decision ?? { id: decisionId, projectId, title: '…', status: 'pending', options: [] }}
+          versions={detail?.versions}
+          auditLog={detail?.auditLog}
+          relatedItems={detail?.relatedItems}
+          projectId={projectId}
+          onApprovalSubmit={handleApproval}
+          requiresEsign={false}
+          isLoading={isLoadingDetail}
+        />
+      ) : (
+        <DecisionList
+          decisions={decisions}
+          projectId={projectId}
+          isLoading={isLoadingList}
+          filters={filters}
+          onFiltersChange={setFilters}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={(field, order) => {
+            setSortBy(field)
+            setSortOrder(order)
+          }}
+          total={total}
+          view={view}
+          getDecisionLink={(d) => `/dashboard/projects/${projectId}/decisions/${d.id}`}
+        />
+      )}
     </div>
   )
 }
