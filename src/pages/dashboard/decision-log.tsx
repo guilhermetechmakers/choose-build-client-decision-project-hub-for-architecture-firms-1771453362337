@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Plus, ArrowLeft, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,10 +10,10 @@ import {
   listDecisions,
   getDecisionDetail,
   submitApproval,
+  downloadVersion,
   type ListDecisionsParams,
 } from '@/api/decision-log'
 import type { Decision } from '@/types'
-import { useState } from 'react'
 
 /** Mock data when API is not available */
 const MOCK_DECISIONS: Decision[] = [
@@ -72,6 +73,13 @@ export function DecisionLog() {
   const [sortBy, setSortBy] = useState<SortField>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
+  useEffect(() => {
+    document.title = decisionId ? 'Decision detail | Choose & Build' : 'Decision Log | Choose & Build'
+    return () => {
+      document.title = 'Choose & Build'
+    }
+  }, [decisionId])
+
   const listParams: ListDecisionsParams = {
     projectId: projectId ?? '',
     ...filters,
@@ -122,6 +130,16 @@ export function DecisionLog() {
   ) => {
     const versionId = detail?.versions?.[0]?.id ?? detail?.decision?.id ?? ''
     await approvalMutation.mutateAsync({ action, comment, versionId })
+  }
+
+  const handleDownloadVersion = async (versionId: string) => {
+    if (!projectId || !decisionId) return
+    try {
+      const { url } = await downloadVersion(projectId, decisionId, versionId)
+      if (url) window.open(url, '_blank')
+    } catch {
+      toast.error('Download failed.')
+    }
   }
 
   if (!projectId) {
@@ -190,7 +208,9 @@ export function DecisionLog() {
           relatedItems={detail?.relatedItems}
           projectId={projectId}
           onApprovalSubmit={handleApproval}
+          onDownloadVersion={handleDownloadVersion}
           requiresEsign={false}
+          isApprovalSubmitting={approvalMutation.isPending}
           isLoading={isLoadingDetail}
         />
       ) : (

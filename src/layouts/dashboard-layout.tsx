@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Menu,
   Plus,
+  ClipboardList,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -22,6 +23,7 @@ const SIDEBAR_COLLAPSED_KEY = 'choose-build-sidebar-collapsed'
 const mainNav = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
+  { to: '/dashboard/decision-log', label: 'Decision Log', icon: ClipboardList },
   { to: '/dashboard/templates', label: 'Templates', icon: LayoutTemplate },
   { to: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
 ]

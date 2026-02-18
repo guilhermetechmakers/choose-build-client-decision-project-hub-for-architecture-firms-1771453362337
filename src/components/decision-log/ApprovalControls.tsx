@@ -21,6 +21,8 @@ export interface ApprovalControlsProps {
   onAskQuestion?: (comment: string) => void | Promise<void>
   onEsign?: () => void | Promise<void>
   requiresEsign?: boolean
+  /** When true, primary actions show loading state */
+  isSubmitting?: boolean
   className?: string
 }
 
@@ -31,11 +33,12 @@ export function ApprovalControls({
   onAskQuestion,
   onEsign,
   requiresEsign = false,
+  isSubmitting: isApprovalSubmitting = false,
   className,
 }: ApprovalControlsProps) {
   const [dialogOpen, setDialogOpen] = useState<'change' | 'question' | null>(null)
   const [comment, setComment] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDialogSubmitting, setIsDialogSubmitting] = useState(false)
 
   const isPending = status === 'pending'
   const isApproved = status === 'approved'
@@ -43,25 +46,25 @@ export function ApprovalControls({
 
   const handleRequestChange = async () => {
     if (!onRequestChange) return
-    setIsSubmitting(true)
+    setIsDialogSubmitting(true)
     try {
       await onRequestChange(comment)
       setComment('')
       setDialogOpen(null)
     } finally {
-      setIsSubmitting(false)
+      setIsDialogSubmitting(false)
     }
   }
 
   const handleAskQuestion = async () => {
     if (!onAskQuestion) return
-    setIsSubmitting(true)
+    setIsDialogSubmitting(true)
     try {
       await onAskQuestion(comment)
       setComment('')
       setDialogOpen(null)
     } finally {
-      setIsSubmitting(false)
+      setIsDialogSubmitting(false)
     }
   }
 
@@ -94,6 +97,9 @@ export function ApprovalControls({
             size="sm"
             className="gap-2 transition-transform hover:scale-[1.02]"
             onClick={() => onApprove?.()}
+            disabled={isApprovalSubmitting}
+            isLoading={isApprovalSubmitting}
+            aria-busy={isApprovalSubmitting}
           >
             <Check className="h-4 w-4" />
             Approve
@@ -147,8 +153,8 @@ export function ApprovalControls({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(null)}>Cancel</Button>
-            <Button onClick={handleRequestChange} disabled={isSubmitting}>
-              {isSubmitting ? 'Sending…' : 'Send request'}
+            <Button onClick={handleRequestChange} disabled={isDialogSubmitting}>
+              {isDialogSubmitting ? 'Sending…' : 'Send request'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -171,8 +177,8 @@ export function ApprovalControls({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(null)}>Cancel</Button>
-            <Button onClick={handleAskQuestion} disabled={isSubmitting}>
-              {isSubmitting ? 'Sending…' : 'Ask question'}
+            <Button onClick={handleAskQuestion} disabled={isDialogSubmitting}>
+              {isDialogSubmitting ? 'Sending…' : 'Ask question'}
             </Button>
           </DialogFooter>
         </DialogContent>

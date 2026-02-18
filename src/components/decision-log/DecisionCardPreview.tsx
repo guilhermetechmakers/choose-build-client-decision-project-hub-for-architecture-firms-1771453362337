@@ -9,6 +9,8 @@ export interface DecisionCardPreviewProps {
   decision: Decision
   projectId: string
   lastActivity?: string
+  /** Override link (e.g. when used outside project context) */
+  to?: string
   className?: string
 }
 
@@ -30,15 +32,17 @@ export function DecisionCardPreview({
   decision,
   projectId,
   lastActivity,
+  to,
   className,
 }: DecisionCardPreviewProps) {
   const variant = statusVariant[decision.status] ?? 'secondary'
   const label = statusLabel[decision.status] ?? decision.status
   const costDelta = decision.costDelta ?? 0
+  const href = to ?? `/dashboard/projects/${projectId}/decisions/${decision.id}`
 
   return (
     <Link
-      to={`/dashboard/projects/${projectId}/decisions/${decision.id}`}
+      to={href}
       className={cn('block transition-all duration-200 hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg', className)}
     >
       <Card className="h-full overflow-hidden border-border transition-shadow duration-200 hover:shadow-card-hover hover:border-primary/30">

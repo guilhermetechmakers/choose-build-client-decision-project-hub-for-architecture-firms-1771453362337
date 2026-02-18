@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Filter, ClipboardList, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -92,6 +93,9 @@ export function DecisionList({
         case 'status':
           cmp = (a.status ?? '').localeCompare(b.status ?? '')
           break
+        case 'phase':
+          cmp = (a.phase ?? '').localeCompare(b.phase ?? '')
+          break
         case 'cost':
           cmp = (a.costDelta ?? 0) - (b.costDelta ?? 0)
           break
@@ -108,6 +112,23 @@ export function DecisionList({
   const handleSearch = () => {
     onFiltersChange({ ...filters, search: searchInput || undefined })
   }
+
+  const updateFilter = <K extends keyof DecisionListFilters>(key: K, value: DecisionListFilters[K]) => {
+    onFiltersChange({ ...filters, [key]: value })
+  }
+
+  const statusOptions = [
+    { value: '', label: 'All statuses' },
+    { value: 'draft', label: 'Draft' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'changes_requested', label: 'Rejected' },
+  ]
+  const costImpactOptions = [
+    { value: 'any', label: 'Any cost impact' },
+    { value: 'none', label: 'No impact' },
+    { value: 'positive', label: 'Has cost increase' },
+  ]
 
   const SortHeader = ({
     field,
@@ -133,6 +154,81 @@ export function DecisionList({
         <ArrowUpDown className="h-4 w-4 opacity-50" />
       )}
     </Button>
+  )
+
+  const filterRow = (
+    <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="relative max-w-sm flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input
+          placeholder="Search decisions..."
+          className="pl-9"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          aria-label="Search decisions"
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Filter className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <Label htmlFor="filter-status" className="text-xs text-muted-foreground">Status</Label>
+            <select
+              id="filter-status"
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={filters.status ?? ''}
+              onChange={(e) => updateFilter('status', e.target.value || undefined)}
+            >
+              {statusOptions.map((o) => (
+                <option key={o.value || 'any'} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <Label htmlFor="filter-phase" className="text-xs text-muted-foreground">Phase</Label>
+            <select
+              id="filter-phase"
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={filters.phase ?? ''}
+              onChange={(e) => updateFilter('phase', e.target.value || undefined)}
+            >
+              <option value="">All phases</option>
+              <option value="design">Design</option>
+              <option value="tender">Tender</option>
+              <option value="construction">Construction</option>
+              <option value="handover">Handover</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1 min-w-[120px]">
+            <Label htmlFor="filter-cost" className="text-xs text-muted-foreground">Cost impact</Label>
+            <select
+              id="filter-cost"
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={filters.costImpact ?? 'any'}
+              onChange={(e) => updateFilter('costImpact', (e.target.value as DecisionListFilters['costImpact']) || undefined)}
+            >
+              {costImpactOptions.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1 min-w-[140px]">
+            <Label htmlFor="filter-assignee" className="text-xs text-muted-foreground">Assignee</Label>
+            <Input
+              id="filter-assignee"
+              placeholder="Any"
+              className="h-9 text-sm"
+              value={filters.assignee ?? ''}
+              onChange={(e) => updateFilter('assignee', e.target.value || undefined)}
+            />
+          </div>
+        </div>
+      </div>
+      <Button variant="secondary" size="sm" onClick={handleSearch}>
+        Search
+      </Button>
+    </div>
   )
 
   if (isLoading) {
@@ -162,21 +258,8 @@ export function DecisionList({
     return (
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-              <Input
-                placeholder="Search decisions..."
-                className="pl-9"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-            </div>
-            <Button variant="secondary" size="sm" onClick={handleSearch}>
-              Search
-            </Button>
-          </div>
+          <CardTitle className="sr-only">Decisions table</CardTitle>
+          {filterRow}
         </CardHeader>
         <CardContent className="pt-0">
           <div className="overflow-x-auto rounded-md border border-border">
@@ -190,6 +273,9 @@ export function DecisionList({
                     <SortHeader field="status" label="Status" />
                   </TableHead>
                   <TableHead>
+                    <SortHeader field="phase" label="Phase" />
+                  </TableHead>
+                  <TableHead>
                     <SortHeader field="cost" label="Cost impact" />
                   </TableHead>
                   <TableHead>
@@ -200,8 +286,17 @@ export function DecisionList({
               <TableBody>
                 {sorted.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                      No decisions found. Create one to get started.
+                    <TableCell colSpan={5} className="py-12">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <ClipboardList className="h-10 w-10 text-muted-foreground mb-2" aria-hidden />
+                        <p className="text-muted-foreground">No decisions found.</p>
+                        <Button variant="outline" size="sm" className="mt-3 gap-1" asChild>
+                          <Link to={`/dashboard/projects/${projectId}/decisions/new`}>
+                            <Plus className="h-4 w-4" />
+                            Create decision
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -216,6 +311,7 @@ export function DecisionList({
                     >
                       <TableCell className="font-medium">{d.title}</TableCell>
                       <TableCell>{statusLabel[d.status] ?? d.status}</TableCell>
+                      <TableCell className="text-muted-foreground">{d.phase ?? '—'}</TableCell>
                       <TableCell>
                         {d.costDelta != null && d.costDelta > 0
                           ? `+${d.costDelta.toLocaleString()}`
@@ -239,28 +335,25 @@ export function DecisionList({
     <Card>
       <CardHeader>
         <CardTitle>Decisions</CardTitle>
-        <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <Input
-              placeholder="Search decisions..."
-              className="pl-9"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-          </div>
-          <Button variant="secondary" size="sm" onClick={handleSearch}>
-            Search
-          </Button>
-        </div>
+        {filterRow}
       </CardHeader>
       <CardContent className="pt-0">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-12 text-center">
-              <p className="text-muted-foreground">No decisions found.</p>
-              <p className="mt-1 text-sm text-muted-foreground">Create a decision to see it here.</p>
+            <div className="col-span-full flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 py-16 px-6 text-center animate-fade-in">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <ClipboardList className="h-8 w-8 text-muted-foreground" aria-hidden />
+              </div>
+              <p className="mt-4 font-medium text-foreground">No decisions found</p>
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+                Create your first decision card to compare options, cost impacts, and recommendations for client approval.
+              </p>
+              <Button variant="accent" size="sm" className="mt-6 gap-2 transition-transform hover:scale-[1.02]" asChild>
+                <Link to={`/dashboard/projects/${projectId}/decisions/new`}>
+                  <Plus className="h-4 w-4" />
+                  Create decision
+                </Link>
+              </Button>
             </div>
           ) : (
             sorted.map((d) => (
@@ -269,6 +362,7 @@ export function DecisionList({
                 decision={d}
                 projectId={projectId}
                 lastActivity={formatLastActivity(d.publishedAt)}
+                to={getDecisionLink?.(d)}
               />
             ))
           )}

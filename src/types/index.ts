@@ -23,6 +23,8 @@ export interface Decision {
   title: string
   description?: string
   status: 'draft' | 'pending' | 'approved' | 'changes_requested'
+  phase?: string
+  assignee?: string
   costDelta?: number
   recommendedOptionId?: string
   options: DecisionOption[]

@@ -17,7 +17,10 @@ export interface DecisionDetailPanelProps {
   relatedItems?: RelatedItem[]
   projectId: string
   onApprovalSubmit?: (action: 'approve' | 'request_change' | 'ask_question', comment?: string) => Promise<void>
+  onDownloadVersion?: (versionId: string) => void | Promise<void>
   requiresEsign?: boolean
+  /** When true, approval controls show loading state */
+  isApprovalSubmitting?: boolean
   isLoading?: boolean
   className?: string
 }
@@ -36,7 +39,9 @@ export function DecisionDetailPanel({
   relatedItems = [],
   projectId,
   onApprovalSubmit,
+  onDownloadVersion,
   requiresEsign = false,
+  isApprovalSubmitting = false,
   isLoading,
   className,
 }: DecisionDetailPanelProps) {
@@ -171,11 +176,12 @@ export function DecisionDetailPanel({
         onRequestChange={onApprovalSubmit ? (c) => onApprovalSubmit('request_change', c) : undefined}
         onAskQuestion={onApprovalSubmit ? (c) => onApprovalSubmit('ask_question', c) : undefined}
         requiresEsign={requiresEsign}
+        isSubmitting={isApprovalSubmitting}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <VersionHistory versions={versions} projectId={projectId} decisionId={decision.id} />
+          <VersionHistory versions={versions} projectId={projectId} decisionId={decision.id} onDownload={onDownloadVersion} />
           <AuditLog entries={auditLog} />
         </div>
         <RelatedItemsSidebar items={relatedItems} />
