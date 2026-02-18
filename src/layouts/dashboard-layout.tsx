@@ -14,8 +14,11 @@ import {
   Menu,
   Plus,
   ClipboardList,
+  MessageSquare,
+  FileStack,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DashboardTopbar } from '@/components/dashboard/Topbar'
 import { cn } from '@/lib/utils'
 
 const SIDEBAR_COLLAPSED_KEY = 'choose-build-sidebar-collapsed'
@@ -23,15 +26,18 @@ const SIDEBAR_COLLAPSED_KEY = 'choose-build-sidebar-collapsed'
 const mainNav = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
-  { to: '/dashboard/decision-log', label: 'Decision Log', icon: ClipboardList },
+  { to: '/dashboard/decision-log', label: 'Decisions', icon: ClipboardList },
+  { to: '/dashboard/messages', label: 'Messages', icon: MessageSquare },
+  { to: '/dashboard/files', label: 'Files', icon: FileStack },
   { to: '/dashboard/templates', label: 'Templates', icon: LayoutTemplate },
   { to: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 
 const secondaryNav = [
   { to: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { to: '/dashboard/orders', label: 'Orders', icon: Receipt },
-  { to: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { to: '/dashboard/users', label: 'Users', icon: Users },
 ]
 
 export function DashboardLayout() {
@@ -127,21 +133,6 @@ export function DashboardLayout() {
               </NavLink>
             ))}
           </div>
-          <NavLink
-            to="/dashboard/users"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-                collapsed && 'justify-center px-2'
-              )
-            }
-          >
-            <Users className="h-5 w-5 shrink-0" />
-            {!collapsed && <span>Users</span>}
-          </NavLink>
         </nav>
       </aside>
 
@@ -230,7 +221,8 @@ export function DashboardLayout() {
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 p-4 md:p-6 pt-14 md:pt-6 max-w-content-wide w-full mx-auto">
+        <DashboardTopbar />
+        <main className="flex-1 p-4 md:p-6 pt-4 max-w-content-wide w-full mx-auto">
           <Outlet />
         </main>
       </div>

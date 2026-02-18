@@ -94,3 +94,77 @@ export interface RelatedItem {
   title: string
   href: string
 }
+
+// --- Dashboard & Timeline ---
+
+export interface Dashboard {
+  id: string
+  user_id: string
+  title: string
+  description?: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+/** Standard project phases (kickoff → handover) */
+export const PROJECT_PHASE_IDS = [
+  'kickoff',
+  'concept',
+  'schematic',
+  'dd',
+  'permitting',
+  'ca',
+  'handover',
+] as const
+
+export type ProjectPhaseId = (typeof PROJECT_PHASE_IDS)[number]
+
+export interface ProjectPhase {
+  id: string
+  projectId: string
+  phaseId: ProjectPhaseId
+  label: string
+  orderIndex: number
+  percentComplete: number
+  startDate?: string
+  endDate?: string
+  updatedAt: string
+}
+
+export interface ProjectMilestone {
+  id: string
+  projectId: string
+  phaseId: string
+  name: string
+  dueDate: string
+  assigneeId?: string
+  assigneeName?: string
+  status: 'upcoming' | 'in_progress' | 'completed' | 'overdue'
+  decisionId?: string
+  orderIndex: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DecisionCheckpoint {
+  id: string
+  projectId: string
+  decisionId: string
+  decisionTitle: string
+  phaseId: string
+  status: string
+  orderIndex: number
+}
+
+export interface ProjectTimeline {
+  projectId: string
+  projectName: string
+  phases: ProjectPhase[]
+  milestones: ProjectMilestone[]
+  decisionCheckpoints: DecisionCheckpoint[]
+}
+
+export type TimelineViewMode = 'list' | 'gantt'
+
+export type TimelineFilter = 'all' | 'actionable' | 'overdue' | 'approvals_needed'
