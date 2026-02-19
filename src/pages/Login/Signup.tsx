@@ -14,6 +14,18 @@ export default function LoginSignupPage() {
   const navigate = useNavigate()
   const signIn = useSignIn()
   const firmSignup = useFirmSignup()
+  const loginError =
+    signIn.error instanceof Error
+      ? signIn.error.message
+      : typeof (signIn.error as unknown as { message?: string })?.message === 'string'
+        ? (signIn.error as { message: string }).message
+        : null
+  const signupError =
+    firmSignup.error instanceof Error
+      ? firmSignup.error.message
+      : typeof (firmSignup.error as unknown as { message?: string })?.message === 'string'
+        ? (firmSignup.error as { message: string }).message
+        : null
 
   const handleLoginSubmit = (data: LoginFormValues) => {
     signIn.mutate(
@@ -76,6 +88,14 @@ export default function LoginSignupPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Enter your credentials or use SSO.
               </p>
+              {loginError && (
+                <div
+                  className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  role="alert"
+                >
+                  {loginError}
+                </div>
+              )}
               <LoginForm onSubmit={handleLoginSubmit} isLoading={signIn.isPending} />
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
@@ -96,6 +116,14 @@ export default function LoginSignupPage() {
           </div>
           {/* Right: Firm sign-up CTA */}
           <div className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+            {signupError && (
+              <div
+                className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {signupError}
+              </div>
+            )}
             <SignupCTA onSubmit={handleFirmSignupSubmit} isLoading={firmSignup.isPending} />
             <p className="mt-4 text-center text-sm text-muted-foreground">
               Already have an account?{' '}

@@ -15,14 +15,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
+    const body = req.method === 'POST' ? ((await req.json()) as { refresh_token?: string }) : {}
+    const refreshToken = body?.refresh_token ?? req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+    if (!refreshToken) {
+      return new Response(
+        JSON.stringify({ message: 'Refresh token required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: authHeader ? { headers: { Authorization: authHeader } } : {},
-    })
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-    const { data, error } = await supabase.auth.refreshSession()
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken })
 
     if (error || !data.session) {
       return new Response(

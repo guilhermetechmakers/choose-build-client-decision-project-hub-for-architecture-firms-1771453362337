@@ -15,11 +15,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
+    let token: string | null = req.headers.get('Authorization')?.startsWith('Bearer ')
+      ? req.headers.get('Authorization')!.slice(7)
+      : null
+    if (!token && req.method === 'POST') {
+      const body = (await req.json()) as { access_token?: string }
+      token = body?.access_token ?? null
+    }
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: authHeader ? { Authorization: authHeader } : {} },
+      global: { headers: token ? { Authorization: `Bearer ${token}` } : {} },
     })
 
     await supabase.auth.signOut({ scope: 'local' })

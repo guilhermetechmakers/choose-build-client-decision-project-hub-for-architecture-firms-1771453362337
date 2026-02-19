@@ -15,8 +15,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    let token: string | null = null
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.slice(7)
+    } else if (req.method === 'POST') {
+      const body = (await req.json()) as { access_token?: string }
+      token = body?.access_token ?? null
+    }
+    if (!token) {
       return new Response(
         JSON.stringify({ message: 'Missing or invalid authorization' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -26,7 +33,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     })
 
     const { data: { session }, error } = await supabase.auth.getSession()

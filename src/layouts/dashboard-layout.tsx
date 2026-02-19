@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet, Link, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, Link, NavLink, useLocation, Navigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   FolderKanban,
@@ -19,7 +19,9 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DashboardTopbar } from '@/components/dashboard/Topbar'
+import { useSession } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const SIDEBAR_COLLAPSED_KEY = 'choose-build-sidebar-collapsed'
 
@@ -41,6 +43,7 @@ const secondaryNav = [
 ]
 
 export function DashboardLayout() {
+  const { data: session, isLoading: sessionLoading } = useSession()
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true'
@@ -58,6 +61,22 @@ export function DashboardLayout() {
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
+
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex bg-background">
+        <Skeleton className="h-screen w-56 shrink-0 rounded-none" />
+        <div className="flex-1 flex flex-col p-6 gap-4">
+          <Skeleton className="h-14 w-full max-w-content-wide" />
+          <Skeleton className="flex-1 w-full max-w-content-wide" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <Navigate to="/login-/-signup" replace />
+  }
 
   return (
     <div className="min-h-screen flex bg-background">
