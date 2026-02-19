@@ -19,7 +19,7 @@ function mockTimeline(projectId: string): ProjectTimeline {
     projectId,
     projectName: 'Project',
     phases: PROJECT_PHASE_IDS.map((id, i) => ({
-      id: id,
+      id: `phase-${id}`,
       projectId,
       phaseId: id,
       label: phaseLabels[id] ?? id,

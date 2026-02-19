@@ -47,7 +47,7 @@ export function PendingApprovalsWidget({ items, isLoading }: PendingApprovalsWid
             {items.map((item) => (
               <li key={item.id}>
                 <Link
-                  to={`/dashboard/projects/${item.projectId}/decisions`}
+                  to={`/dashboard/projects/${item.projectId}/decisions/${item.id}`}
                   className={cn(
                     'block rounded-lg border border-border p-3 transition-colors duration-200',
                     'hover:bg-muted/50 hover:border-primary/30'

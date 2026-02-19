@@ -1,46 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Outlet, Link, NavLink, useLocation, Navigate } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  FolderKanban,
-  LayoutTemplate,
-  BarChart3,
-  CreditCard,
-  Receipt,
-  Settings,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Plus,
-  ClipboardList,
-  MessageSquare,
-  FileStack,
-} from 'lucide-react'
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DashboardTopbar } from '@/components/dashboard/Topbar'
+import { LeftNavigation } from '@/components/dashboard/LeftNavigation'
 import { useSession } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const SIDEBAR_COLLAPSED_KEY = 'choose-build-sidebar-collapsed'
-
-const mainNav = [
-  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
-  { to: '/dashboard/decision-log', label: 'Decisions', icon: ClipboardList },
-  { to: '/dashboard/messages', label: 'Messages', icon: MessageSquare },
-  { to: '/dashboard/files', label: 'Files', icon: FileStack },
-  { to: '/dashboard/templates', label: 'Templates', icon: LayoutTemplate },
-  { to: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/dashboard/settings', label: 'Settings', icon: Settings },
-]
-
-const secondaryNav = [
-  { to: '/dashboard/billing', label: 'Billing', icon: CreditCard },
-  { to: '/dashboard/orders', label: 'Orders', icon: Receipt },
-  { to: '/dashboard/users', label: 'Users', icon: Users },
-]
 
 export function DashboardLayout() {
   const { data: session, isLoading: sessionLoading } = useSession()
@@ -103,56 +71,7 @@ export function DashboardLayout() {
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </Button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-          {!collapsed && (
-            <div className="px-2 py-2">
-              <Button variant="accent" size="sm" className="w-full gap-2" asChild>
-                <Link to="/dashboard/projects/new">
-                  <Plus className="h-4 w-4" />
-                  New project
-                </Link>
-              </Button>
-            </div>
-          )}
-          {mainNav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-                  collapsed && 'justify-center px-2'
-                )
-              }
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </NavLink>
-          ))}
-          <div className="pt-4 border-t border-border">
-            {secondaryNav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-                    collapsed && 'justify-center px-2'
-                  )
-                }
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
+        <LeftNavigation collapsed={collapsed} />
       </aside>
 
       {/* Mobile menu button */}
@@ -185,56 +104,7 @@ export function DashboardLayout() {
                 <ChevronLeft className="h-5 w-5" />
               </Button>
             </div>
-            <nav className="p-4 space-y-1">
-              <Button variant="accent" size="sm" className="w-full gap-2 mb-4" asChild>
-                <Link to="/dashboard/projects/new">
-                  <Plus className="h-4 w-4" />
-                  New project
-                </Link>
-              </Button>
-              {mainNav.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium',
-                      isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
-                    )
-                  }
-                >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {item.label}
-                </NavLink>
-              ))}
-              {secondaryNav.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium',
-                      isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
-                    )
-                  }
-                >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {item.label}
-                </NavLink>
-              ))}
-              <NavLink
-                to="/dashboard/users"
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium',
-                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
-                  )
-                }
-              >
-                <Users className="h-5 w-5 shrink-0" />
-                Users
-              </NavLink>
-            </nav>
+            <LeftNavigation compact className="p-4" />
           </aside>
         </>
       )}

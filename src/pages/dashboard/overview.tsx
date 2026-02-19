@@ -1,4 +1,4 @@
-import { FileCheck, FolderKanban, Calendar, TrendingUp } from 'lucide-react'
+import { FileCheck, FolderKanban, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AreaChart,
@@ -15,6 +15,7 @@ import { PendingApprovalsWidget } from '@/components/dashboard/PendingApprovalsW
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { UpcomingMeetingsAndTasks } from '@/components/dashboard/UpcomingMeetingsAndTasks'
 import { QuickActions } from '@/components/dashboard/QuickActions'
+import { Button } from '@/components/ui/button'
 
 const chartData = [
   { name: 'Mon', approvals: 4 },
@@ -27,11 +28,31 @@ const chartData = [
 ]
 
 export function DashboardOverview() {
-  const { data, isLoading } = useDashboardOverview()
+  const { data, isLoading, isError, refetch } = useDashboardOverview()
   const projects = data?.projects ?? []
   const pendingApprovals = data?.pendingApprovals ?? []
   const activity = data?.activity ?? []
   const upcomingMeetings = data?.upcomingMeetings ?? []
+
+  if (isError) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Project and workload overview.</p>
+        </div>
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-4">
+            <AlertCircle className="h-12 w-12 text-destructive" aria-hidden />
+            <p className="text-center text-muted-foreground">Something went wrong loading the dashboard.</p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">

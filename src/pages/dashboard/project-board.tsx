@@ -27,6 +27,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useTimeline, useCreateMilestone, useRescheduleMilestone } from '@/hooks/useTimeline'
+import { useSession } from '@/hooks/useAuth'
 import type { ProjectPhase, ProjectMilestone } from '@/types'
 import type { TimelineFilter } from '@/types'
 import { cn } from '@/lib/utils'
@@ -63,6 +64,8 @@ export function ProjectBoard() {
   const [rescheduleId, setRescheduleId] = useState<string | null>(null)
   const [rescheduleDue, setRescheduleDue] = useState('')
 
+  const { data: session } = useSession()
+  const canReschedule = Boolean(session)
   const { data: timeline, isLoading } = useTimeline(projectId)
   const createMilestone = useCreateMilestone(projectId ?? '')
   const rescheduleMutation = useRescheduleMilestone(projectId ?? '')
@@ -283,11 +286,30 @@ export function ProjectBoard() {
                       setRescheduleDue(m.dueDate)
                     }}
                     projectId={projectId ?? ''}
+                    canReschedule={canReschedule}
                   />
                 ))}
               </ul>
             ) : (
-              <GanttLite milestones={filteredMilestones} phases={phases} projectId={projectId ?? ''} onReschedule={(id, due) => { setRescheduleId(id); setRescheduleDue(due); }} />
+              <GanttLite
+                milestones={filteredMilestones}
+                phases={phases}
+                projectId={projectId ?? ''}
+                onReschedule={(id, due) => {
+                  setRescheduleId(id)
+                  setRescheduleDue(due)
+                }}
+                canReschedule={canReschedule}
+                onRescheduleByDrag={(id, due) => {
+                  rescheduleMutation.mutate(
+                    { milestoneId: id, dueDate: due },
+                    {
+                      onSuccess: () => toast.success('Due date updated'),
+                      onError: () => toast.error('Failed to update'),
+                    }
+                  )
+                }}
+              />
             )}
           </CardContent>
         </CardHeader>
@@ -412,10 +434,12 @@ function MilestoneCard({
   milestone,
   onReschedule,
   projectId,
+  canReschedule,
 }: {
   milestone: ProjectMilestone
   onReschedule: () => void
   projectId: string
+  canReschedule: boolean
 }) {
   return (
     <li className="flex items-center justify-between gap-4 rounded-lg border border-border p-3 transition-shadow hover:shadow-card">
@@ -434,9 +458,11 @@ function MilestoneCard({
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Badge variant={getStatusVariant(milestone.status)}>{milestone.status.replace('_', ' ')}</Badge>
-        <Button variant="ghost" size="sm" onClick={onReschedule}>
-          Reschedule
-        </Button>
+        {canReschedule && (
+          <Button variant="ghost" size="sm" onClick={onReschedule}>
+            Reschedule
+          </Button>
+        )}
         {milestone.decisionId && (
           <Link
             to={`/dashboard/projects/${projectId}/decisions/${milestone.decisionId}`}
@@ -455,11 +481,15 @@ function GanttLite({
   phases: _phases,
   projectId: _projectId,
   onReschedule,
+  canReschedule,
+  onRescheduleByDrag,
 }: {
   milestones: ProjectMilestone[]
   phases: ProjectPhase[]
   projectId: string
   onReschedule: (id: string, due: string) => void
+  canReschedule?: boolean
+  onRescheduleByDrag?: (milestoneId: string, newDueDate: string) => void
 }) {
   const minDate = milestones.length
     ? milestones.reduce((a, m) => (m.dueDate < a ? m.dueDate : a), milestones[0].dueDate)
@@ -471,6 +501,23 @@ function GanttLite({
   const end = new Date(maxDate).getTime()
   const range = end - start || 1
 
+  function dateFromOffset(offsetPercent: number): string {
+    const t = start + (offsetPercent / 100) * range
+    return new Date(Math.round(t)).toISOString().slice(0, 10)
+  }
+
+  function handleBarDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    if (!canReschedule || !onRescheduleByDrag) return
+    const milestoneId = e.dataTransfer.getData('text/plain')
+    if (!milestoneId) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100))
+    const newDue = dateFromOffset(pct)
+    onRescheduleByDrag(milestoneId, newDue)
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[500px] text-sm">
@@ -480,6 +527,7 @@ function GanttLite({
             <th className="text-left py-2 font-medium">Phase</th>
             <th className="text-left py-2 font-medium">Due</th>
             <th className="py-2 font-medium">Timeline</th>
+            {canReschedule && <th className="py-2 font-medium w-24">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -491,19 +539,33 @@ function GanttLite({
                 <td className="py-2 text-muted-foreground">{m.phaseId}</td>
                 <td className="py-2">{formatDate(m.dueDate)}</td>
                 <td className="py-2">
-                  <div className="relative h-6 rounded bg-muted">
+                  <div
+                    className="relative h-6 rounded bg-muted"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleBarDrop}
+                  >
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-2 h-4 rounded bg-primary"
+                      draggable={canReschedule && !!onRescheduleByDrag}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', m.id)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      className={cn(
+                        'absolute top-1/2 -translate-y-1/2 w-2 h-4 rounded bg-primary',
+                        canReschedule && onRescheduleByDrag && 'cursor-grab active:cursor-grabbing'
+                      )}
                       style={{ left: `${Math.max(0, Math.min(pos, 98))}%` }}
-                      title={formatDate(m.dueDate)}
+                      title={canReschedule ? 'Drag to reschedule' : formatDate(m.dueDate)}
                     />
                   </div>
                 </td>
-                <td className="py-2">
-                  <Button variant="ghost" size="sm" onClick={() => onReschedule(m.id, m.dueDate)}>
-                    Reschedule
-                  </Button>
-                </td>
+                {canReschedule && (
+                  <td className="py-2">
+                    <Button variant="ghost" size="sm" onClick={() => onReschedule(m.id, m.dueDate)}>
+                      Reschedule
+                    </Button>
+                  </td>
+                )}
               </tr>
             )
           })}

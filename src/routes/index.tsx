@@ -8,7 +8,7 @@ import { ForgotPassword } from '@/pages/auth/forgot-password'
 import { ResetPassword } from '@/pages/auth/reset-password'
 import { VerifyEmail } from '@/pages/auth/verify-email'
 import { Landing } from '@/pages/landing'
-import { DashboardOverview } from '@/pages/dashboard/overview'
+import Dashboard from '@/pages/Dashboard'
 import { ProjectsList } from '@/pages/dashboard/projects-list'
 import { NewProject } from '@/pages/dashboard/new-project'
 import { ProjectBoard } from '@/pages/dashboard/project-board'
@@ -54,7 +54,7 @@ export const router = createBrowserRouter([
     path: '/dashboard',
     element: <DashboardLayout />,
     children: [
-      { index: true, element: <DashboardOverview /> },
+      { index: true, element: <Dashboard /> },
       { path: 'decision-log', element: <DecisionLogPage /> },
       { path: 'projects', element: <ProjectsList /> },
       { path: 'projects/new', element: <NewProject /> },
