@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthHeader } from '@/components/login-signup/AuthHeader'
 import { AuthFooter } from '@/components/login-signup/AuthFooter'
@@ -10,7 +11,29 @@ import type { FirmSignupFormValues } from '@/components/login-signup/SignupCTA'
 import { useSignIn, useFirmSignup } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+const PAGE_TITLE = 'Sign in or Sign up | Choose & Build'
+const PAGE_DESCRIPTION = 'Sign in to your account or create a new one. Use email, SSO, or an invite link.'
+
 export default function LoginSignupPage() {
+  useEffect(() => {
+    const prevTitle = document.title
+    const metaEl = document.querySelector('meta[name="description"]')
+    const prevDescription = metaEl?.getAttribute('content') ?? null
+    document.title = PAGE_TITLE
+    if (metaEl) {
+      metaEl.setAttribute('content', PAGE_DESCRIPTION)
+    } else {
+      const meta = document.createElement('meta')
+      meta.setAttribute('name', 'description')
+      meta.setAttribute('content', PAGE_DESCRIPTION)
+      document.head.appendChild(meta)
+    }
+    return () => {
+      document.title = prevTitle
+      const m = document.querySelector('meta[name="description"]')
+      if (m && typeof prevDescription === 'string') m.setAttribute('content', prevDescription)
+    }
+  }, [])
   const navigate = useNavigate()
   const signIn = useSignIn()
   const firmSignup = useFirmSignup()

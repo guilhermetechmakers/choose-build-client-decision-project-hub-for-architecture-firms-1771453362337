@@ -38,13 +38,13 @@ import { ServerError } from '@/pages/server-error'
 
 export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
+  { path: '/login-signup', element: <LoginSignupPage /> },
+  { path: '/login-/-signup', element: <LoginSignupPage /> },
   {
     element: <AuthLayout />,
     children: [
       { path: '/login', element: <Login /> },
       { path: '/signup', element: <Signup /> },
-      { path: '/login-signup', element: <LoginSignupPage /> },
-      { path: '/login-/-signup', element: <LoginSignupPage /> },
       { path: '/forgot-password', element: <ForgotPassword /> },
       { path: '/reset-password', element: <ResetPassword /> },
       { path: '/verify-email', element: <VerifyEmail /> },
