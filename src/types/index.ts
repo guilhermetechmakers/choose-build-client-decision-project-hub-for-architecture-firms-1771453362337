@@ -168,3 +168,64 @@ export interface ProjectTimeline {
 export type TimelineViewMode = 'list' | 'gantt'
 
 export type TimelineFilter = 'all' | 'actionable' | 'overdue' | 'approvals_needed'
+
+// --- Templates Library (CRUD & Versioning) ---
+
+/** Project/decision template (residential remodel, commercial fit-out, decision sets) */
+export interface ProjectTemplate {
+  id: string
+  user_id: string
+  title: string
+  description?: string
+  status: 'draft' | 'active' | 'archived'
+  type: 'project' | 'decision_set'
+  usage_count: number
+  created_at: string
+  updated_at: string
+}
+
+/** Immutable template version snapshot */
+export interface TemplateVersion {
+  id: string
+  template_id: string
+  version: number
+  title: string
+  description?: string
+  milestones: TemplateMilestoneStub[]
+  decision_stubs: TemplateDecisionStub[]
+  created_at: string
+}
+
+/** Milestone stub in a template */
+export interface TemplateMilestoneStub {
+  id: string
+  name: string
+  phase_id?: string
+  order_index: number
+}
+
+/** Decision stub in a template */
+export interface TemplateDecisionStub {
+  id: string
+  title: string
+  description?: string
+  order_index: number
+}
+
+/** Usage stats for templates list */
+export interface TemplateUsageStats {
+  template_id: string
+  usage_count: number
+  last_used_at?: string
+}
+
+/** CRUD operations & versioning table (spec); maps to project_templates in implementation */
+export interface CrudOperationsVersioningRecord {
+  id: string
+  user_id: string
+  title: string
+  description?: string
+  status: string
+  created_at: string
+  updated_at: string
+}

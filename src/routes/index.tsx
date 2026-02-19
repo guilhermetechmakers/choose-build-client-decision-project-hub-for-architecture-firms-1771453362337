@@ -21,6 +21,8 @@ import { FilesDrawings } from '@/pages/dashboard/files-drawings'
 import { FilesOverview } from '@/pages/dashboard/files-overview'
 import { Meetings } from '@/pages/dashboard/meetings'
 import { Templates } from '@/pages/dashboard/templates'
+import { TemplateDetail } from '@/pages/dashboard/template-detail'
+import { TemplateEdit } from '@/pages/dashboard/template-edit'
 import { Reports } from '@/pages/dashboard/reports'
 import { Billing } from '@/pages/dashboard/billing'
 import { Orders } from '@/pages/dashboard/orders'
@@ -68,6 +70,9 @@ export const router = createBrowserRouter([
       { path: 'projects/:projectId/files', element: <FilesDrawings /> },
       { path: 'projects/:projectId/meetings', element: <Meetings /> },
       { path: 'templates', element: <Templates /> },
+      { path: 'templates/new', element: <Templates /> },
+      { path: 'templates/:templateId', element: <TemplateDetail /> },
+      { path: 'templates/:templateId/edit', element: <TemplateEdit /> },
       { path: 'reports', element: <Reports /> },
       { path: 'billing', element: <Billing /> },
       { path: 'orders', element: <Orders /> },
